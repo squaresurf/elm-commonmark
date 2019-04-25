@@ -8,9 +8,10 @@ spec/CommonMark-0.29.0.spec.json file. The filename contains the CommonMark vers
 tests that use [puppeteer](https://pptr.dev/) and elm reactor to test that this implementation follows the
 spec. This library will be pre 1.0.0 until it implements the full spec.
 
-You can run the specs via `yarn spec`
+### Running Specs
 
-Note: the spec script will start elm reactor so make sure that isn't running before running `yarn spec`.
+1. In one terminal run `elm reactor` in the specs dir.
+2. Run `yarn spec` in another terminal anywhere in the repo.
 
 ### Slight Deviation
 

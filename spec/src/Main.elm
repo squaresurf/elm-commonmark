@@ -2,7 +2,8 @@ module Main exposing (main)
 
 import Browser
 import CommonMark
-import Html exposing (Attribute, Html, div, text, textarea)
+import Debug
+import Html exposing (Attribute, Html, div, p, text, textarea)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 
@@ -21,13 +22,13 @@ main =
 
 type alias Model =
     { markdown : String
-    , parsedMarkdown : Html Msg
+    , parsedMarkdown : List (Html Msg)
     }
 
 
 init : Model
 init =
-    { markdown = "", parsedMarkdown = text "" }
+    { markdown = "", parsedMarkdown = [ text "" ] }
 
 
 
@@ -42,7 +43,20 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         Change newMarkdown ->
-            { model | markdown = newMarkdown, parsedMarkdown = CommonMark.toHtml newMarkdown }
+            case CommonMark.toHtml newMarkdown of
+                Ok newHtml ->
+                    { model | markdown = newMarkdown, parsedMarkdown = newHtml }
+
+                Err e ->
+                    { model
+                        | markdown = newMarkdown
+                        , parsedMarkdown =
+                            [ p [ style "color" "red" ]
+                                [ text <|
+                                    Debug.toString e
+                                ]
+                            ]
+                    }
 
 
 
@@ -53,5 +67,5 @@ view : Model -> Html Msg
 view model =
     div []
         [ textarea [ id "markdown_input", placeholder "Markdown", value model.markdown, onInput Change ] []
-        , div [ id "parsed_markdown" ] [ model.parsedMarkdown ]
+        , div [ id "parsed_markdown" ] model.parsedMarkdown
         ]
