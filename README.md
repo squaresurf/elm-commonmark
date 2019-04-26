@@ -13,6 +13,12 @@ spec. This library will be pre 1.0.0 until it implements the full spec.
 1. In one terminal run `elm reactor` in the specs dir.
 2. Run `yarn spec` in another terminal anywhere in the repo.
 
+#### SECTION
+
+If you'd like to run the specs for a specific `SECTION`, then you can set the `SECTION` env var. For example: `SECTION='hard line breaks' yarn spec`
+
+The `SECTION` env var is case insensitive.
+
 ### Slight Deviation
 
 There is a slight deviation from the spec. The spec examples all have an ending newline in their expected html. As

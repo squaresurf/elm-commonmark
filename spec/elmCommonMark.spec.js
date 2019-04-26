@@ -33,13 +33,16 @@ for (i; i < jsonSpec.length; i++) {
       ex.end_line
     }`;
 
-    test(testName, async () => {
-      await page.focus("#markdown_input");
-      await page.keyboard.type(ex.markdown);
+    const section = process.env.SECTION;
+    if (!section || section.toLowerCase() == ex.section.toLowerCase()) {
+      test(testName, async () => {
+        await page.focus("#markdown_input");
+        await page.keyboard.type(ex.markdown);
 
-      const element = await page.$("#parsed_markdown");
-      const html = await page.evaluate(element => element.innerHTML, element);
-      expect(`${html}\n`).toBe(ex.html);
-    });
+        const element = await page.$("#parsed_markdown");
+        const html = await page.evaluate(element => element.innerHTML, element);
+        expect(`${html}\n`).toBe(ex.html);
+      });
+    }
   })(i);
 }
