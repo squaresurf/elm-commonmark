@@ -27,4 +27,19 @@ suite =
                         Err err ->
                             Expect.fail <| toString err
             ]
+        , describe "Thematic breaks" <|
+            [ test "Three Pluses" <|
+                \_ ->
+                    case CommonMark.toHtml "+++" of
+                        Ok html ->
+                            html
+                                |> Html.div []
+                                |> Query.fromHtml
+                                |> Query.contains
+                                    [ Html.p [] [ Html.text "+++" ]
+                                    ]
+
+                        Err err ->
+                            Expect.fail <| toString err
+            ]
         ]
