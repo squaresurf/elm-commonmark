@@ -26,7 +26,15 @@ for (i; i < jsonSpec.length; i++) {
     }`;
 
     const section = process.env.SECTION;
-    if (!section || section.toLowerCase() == ex.section.toLowerCase()) {
+    const example = process.env.EXAMPLE;
+    if (
+      (!section || section.toLowerCase() == ex.section.toLowerCase()) &&
+      (!example || example == ex.example)
+    ) {
+      if (example) {
+        console.log("Markdown:", ex.markdown);
+      }
+
       test(testName, async () => {
         page = await browser.newPage();
         await page.goto("http://localhost:8000/src/Main.elm");
