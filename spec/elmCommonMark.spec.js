@@ -11,14 +11,6 @@ const textarea_id = "markdown_input";
 
 beforeAll(async () => {
   browser = await puppeteer.launch();
-  page = await browser.newPage();
-  await page.goto("http://localhost:8000/src/Main.elm");
-});
-
-afterEach(async () => {
-  await page.evaluate(id => {
-    document.getElementById(id).value = "";
-  }, textarea_id);
 });
 
 afterAll(async () => {
@@ -36,6 +28,8 @@ for (i; i < jsonSpec.length; i++) {
     const section = process.env.SECTION;
     if (!section || section.toLowerCase() == ex.section.toLowerCase()) {
       test(testName, async () => {
+        page = await browser.newPage();
+        await page.goto("http://localhost:8000/src/Main.elm");
         await page.focus("#markdown_input");
         await page.keyboard.type(ex.markdown);
 
