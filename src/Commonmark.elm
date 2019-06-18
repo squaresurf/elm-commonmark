@@ -5,6 +5,12 @@ import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser, Step(..))
 
 
+type alias InlineLoopState msg =
+    { endTerm : String
+    , html : List (Html msg)
+    }
+
+
 toHtml : String -> Result (List Parser.DeadEnd) (List (Html msg))
 toHtml markdown =
     Parser.run mdParser markdown
@@ -29,7 +35,7 @@ blockParser html =
             |. Parser.symbol "\t"
             |= Parser.getChompedString (Parser.chompUntilEndOr "\n\n")
         , Parser.succeed identity
-            |= inlineMdParser
+            |= inlineMdParser "\n\n"
             |> Parser.andThen
                 (\inline ->
                     if List.isEmpty inline then
@@ -43,37 +49,49 @@ blockParser html =
         ]
 
 
-inlineMdParser : Parser (List (Html msg))
-inlineMdParser =
-    Parser.loop [] inlineParser
+
+---------- Inline Parsers ----------
 
 
-inlineParser : List (Html msg) -> Parser (Step (List (Html msg)) (List (Html msg)))
-inlineParser html =
+inlineMdParser : String -> Parser (List (Html msg))
+inlineMdParser endTerm =
+    Parser.loop (InlineLoopState "\n\n" []) inlineParser
+
+
+inlineParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
+inlineParser state =
     Parser.oneOf
-        [ Parser.succeed (\text url -> Loop (Html.a [ Attr.href url ] [ Html.text text ] :: html))
-            |. Parser.symbol "["
-            |= Parser.getChompedString
-                (Parser.chompWhile (\c -> c /= ']'))
-            |. Parser.symbol "]"
-            |. Parser.symbol "("
-            |= Parser.getChompedString
-                (Parser.chompWhile (\c -> c /= ')'))
-            |. Parser.symbol ")"
+        [ linkParser state
         , Parser.succeed (\before str after -> ( before, str, after ))
             |= Parser.getOffset
             |= Parser.getChompedString
-                (Parser.chompUntilEndOr "\n\n")
+                (Parser.chompUntilEndOr state.endTerm)
             |= Parser.getOffset
             |> Parser.andThen
                 (\( before, str, after ) ->
                     if before < after then
                         Parser.succeed <|
-                            Loop (Html.text (String.trim str) :: html)
+                            Loop { state | html = Html.text (String.trim str) :: state.html }
 
                     else
                         Parser.problem str
                 )
         , Parser.succeed ()
-            |> Parser.map (\_ -> Done (List.reverse html))
+            |> Parser.map (\_ -> Done (List.reverse state.html))
         ]
+
+
+linkParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
+linkParser state =
+    Parser.succeed
+        (\text url ->
+            Loop { state | html = Html.a [ Attr.href url ] [ Html.text text ] :: state.html }
+        )
+        |. Parser.symbol "["
+        |= Parser.getChompedString
+            (Parser.chompWhile (\c -> c /= ']'))
+        |. Parser.symbol "]"
+        |. Parser.symbol "("
+        |= Parser.getChompedString
+            (Parser.chompWhile (\c -> c /= ')'))
+        |. Parser.symbol ")"
