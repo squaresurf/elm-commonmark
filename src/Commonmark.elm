@@ -1,6 +1,6 @@
 module CommonMark exposing (toHtml)
 
-import Html exposing (Html)
+import Html exposing (Attribute, Html)
 import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser, Step(..))
 
@@ -69,7 +69,10 @@ inlineParser state =
             |= Parser.getOffset
             |> Parser.andThen
                 (\( before, str, after ) ->
-                    if before < after then
+                    if str == "\n" then
+                        Parser.succeed <| Done (List.reverse state.html)
+
+                    else if before < after then
                         Parser.succeed <|
                             Loop { state | html = Html.text (String.trim str) :: state.html }
 
@@ -84,14 +87,36 @@ inlineParser state =
 linkParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
 linkParser state =
     Parser.succeed
-        (\text url ->
-            Loop { state | html = Html.a [ Attr.href url ] [ Html.text text ] :: state.html }
+        (\text attrs ->
+            Loop { state | html = Html.a attrs [ Html.text text ] :: state.html }
         )
         |. Parser.symbol "["
         |= Parser.getChompedString
             (Parser.chompWhile (\c -> c /= ']'))
         |. Parser.symbol "]"
         |. Parser.symbol "("
-        |= Parser.getChompedString
-            (Parser.chompWhile (\c -> c /= ')'))
+        |= linkAttrParser ')'
         |. Parser.symbol ")"
+
+
+linkAttrParser : Char -> Parser (List (Attribute msg))
+linkAttrParser endTerm =
+    Parser.succeed
+        (\url maybeTitle ->
+            case maybeTitle of
+                Just title ->
+                    [ Attr.href url, Attr.title title ]
+
+                Nothing ->
+                    [ Attr.href url ]
+        )
+        |= Parser.getChompedString
+            (Parser.chompWhile (\c -> c /= ' ' && c /= endTerm))
+        |. Parser.spaces
+        |= Parser.oneOf
+            [ Parser.succeed (\t -> Just t)
+                |. Parser.token "\""
+                |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '"'))
+                |. Parser.token "\""
+            , Parser.succeed Nothing
+            ]

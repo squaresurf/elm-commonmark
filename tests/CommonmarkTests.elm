@@ -26,9 +26,16 @@ suite =
                     testMarkdown "+++" [ Html.p [] [ Html.text "+++" ] ]
             ]
         , describe "Links" <|
-            [ test "Example 482" <|
+            [ test "Example 481" <|
                 \_ ->
-                    testMarkdown "[link](/uri)"
+                    testMarkdown "[link](/uri \"title\")\n"
+                        [ Html.p []
+                            [ Html.a [ Attr.href "/uri", Attr.title "title" ] [ Html.text "link" ]
+                            ]
+                        ]
+            , test "Example 482" <|
+                \_ ->
+                    testMarkdown "[link](/uri)\n"
                         [ Html.p []
                             [ Html.a [ Attr.href "/uri" ] [ Html.text "link" ]
                             ]
