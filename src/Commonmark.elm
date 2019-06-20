@@ -110,8 +110,16 @@ linkAttrParser endTerm =
                 Nothing ->
                     [ Attr.href url ]
         )
+        |. Parser.oneOf
+            [ Parser.succeed identity |. Parser.chompIf (\c -> c == '<')
+            , Parser.succeed identity
+            ]
         |= Parser.getChompedString
-            (Parser.chompWhile (\c -> c /= ' ' && c /= endTerm))
+            (Parser.chompWhile (\c -> c /= ' ' && c /= endTerm && c /= '>'))
+        |. Parser.oneOf
+            [ Parser.succeed identity |. Parser.chompIf (\c -> c == '>')
+            , Parser.succeed identity
+            ]
         |. Parser.spaces
         |= Parser.oneOf
             [ Parser.succeed (\t -> Just t)

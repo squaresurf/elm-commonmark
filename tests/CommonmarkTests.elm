@@ -13,11 +13,15 @@ import Test.Html.Selector as Selector
 suite : Test
 suite =
     describe "CommonMark"
+        -- TODO write fuzz tests that would generate markdown documents longer than the excerpts from the spec
+        -- json.
         [ describe "Tabs"
             -- TODO write fuzz tests over a strong mapping to the spec tests
             [ test "Basic CodeFence" <|
                 \_ ->
-                    testMarkdown "\tfoo\tbaz\t\tbim\n" [ Html.pre [] [ Html.code [] [ Html.text "foo\tbaz\t\tbim\n" ] ] ]
+                    testMarkdown "\tfoo\tbaz\t\tbim\n"
+                        [ Html.pre [] [ Html.code [] [ Html.text "foo\tbaz\t\tbim\n" ] ]
+                        ]
             ]
         , describe "Thematic breaks" <|
             -- TODO write fuzz tests over a strong mapping to the spec tests
@@ -38,6 +42,20 @@ suite =
                     testMarkdown "[link](/uri)\n"
                         [ Html.p []
                             [ Html.a [ Attr.href "/uri" ] [ Html.text "link" ]
+                            ]
+                        ]
+            , test "Example 483" <|
+                \_ ->
+                    testMarkdown "[link]()\n"
+                        [ Html.p []
+                            [ Html.a [ Attr.href "" ] [ Html.text "link" ]
+                            ]
+                        ]
+            , test "Example 484" <|
+                \_ ->
+                    testMarkdown "[link](<>)\n"
+                        [ Html.p []
+                            [ Html.a [ Attr.href "" ] [ Html.text "link" ]
                             ]
                         ]
             ]
