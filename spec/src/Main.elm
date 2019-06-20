@@ -23,12 +23,13 @@ main =
 type alias Model =
     { markdown : String
     , parsedMarkdown : List (Html Msg)
+    , error : Maybe String
     }
 
 
 init : Model
 init =
-    { markdown = "", parsedMarkdown = [ text "" ] }
+    { markdown = "", parsedMarkdown = [ text "" ], error = Nothing }
 
 
 
@@ -45,17 +46,17 @@ update msg model =
         Change newMarkdown ->
             case CommonMark.toHtml newMarkdown of
                 Ok newHtml ->
-                    { model | markdown = newMarkdown, parsedMarkdown = newHtml }
+                    { model
+                        | markdown = newMarkdown
+                        , parsedMarkdown = newHtml
+                        , error = Nothing
+                    }
 
                 Err e ->
                     { model
                         | markdown = newMarkdown
-                        , parsedMarkdown =
-                            [ p [ style "color" "red" ]
-                                [ text <|
-                                    Debug.toString e
-                                ]
-                            ]
+                        , parsedMarkdown = [ text "" ]
+                        , error = Just <| Debug.toString e
                     }
 
 
@@ -68,4 +69,15 @@ view model =
     div []
         [ textarea [ id "markdown_input", placeholder "Markdown", value model.markdown, onInput Change ] []
         , div [ id "parsed_markdown" ] model.parsedMarkdown
+        , div [] [ errorView model ]
         ]
+
+
+errorView : Model -> Html Msg
+errorView model =
+    case model.error of
+        Nothing ->
+            p [] []
+
+        Just err ->
+            p [ style "color" "red" ] [ text err ]
