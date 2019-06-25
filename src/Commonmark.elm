@@ -114,7 +114,7 @@ linkAttrParser endTerm =
             [ Parser.succeed (\href -> String.replace " " "%20" href)
                 |. Parser.token "<"
                 |= Parser.getChompedString
-                    (Parser.chompWhile (\c -> c /= '\n' && c /= endTerm && c /= '>'))
+                    (Parser.chompWhile (\c -> c /= '\n' && c /= '>'))
                 |. Parser.token ">"
             , Parser.succeed identity
                 |= Parser.getChompedString
