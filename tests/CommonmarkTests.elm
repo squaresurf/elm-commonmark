@@ -33,31 +33,19 @@ suite =
             [ test "Example 481" <|
                 \_ ->
                     testMarkdown "[link](/uri \"title\")\n"
-                        [ Html.p []
-                            [ Html.a [ Attr.href "/uri", Attr.title "title" ] [ Html.text "link" ]
-                            ]
-                        ]
+                        [ Html.p [] [ Html.a [ Attr.href "/uri", Attr.title "title" ] [ Html.text "link" ] ] ]
             , test "Example 482" <|
                 \_ ->
                     testMarkdown "[link](/uri)\n"
-                        [ Html.p []
-                            [ Html.a [ Attr.href "/uri" ] [ Html.text "link" ]
-                            ]
-                        ]
+                        [ Html.p [] [ Html.a [ Attr.href "/uri" ] [ Html.text "link" ] ] ]
             , test "Example 483" <|
                 \_ ->
                     testMarkdown "[link]()\n"
-                        [ Html.p []
-                            [ Html.a [ Attr.href "" ] [ Html.text "link" ]
-                            ]
-                        ]
+                        [ Html.p [] [ Html.a [ Attr.href "" ] [ Html.text "link" ] ] ]
             , test "Example 484" <|
                 \_ ->
                     testMarkdown "[link](<>)\n"
-                        [ Html.p []
-                            [ Html.a [ Attr.href "" ] [ Html.text "link" ]
-                            ]
-                        ]
+                        [ Html.p [] [ Html.a [ Attr.href "" ] [ Html.text "link" ] ] ]
             ]
         ]
 
