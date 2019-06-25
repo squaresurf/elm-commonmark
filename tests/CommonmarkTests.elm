@@ -50,6 +50,10 @@ suite =
                 \_ ->
                     testMarkdown "[link](/my uri)\n"
                         [ Html.p [] [ Html.text "[link](/my uri)" ] ]
+            , test "Example 486" <|
+                \_ ->
+                    testMarkdown "[link](</my uri>)\n"
+                        [ Html.p [] [ Html.a [ Attr.href "/my%20uri" ] [ Html.text "link" ] ] ]
             ]
         ]
 

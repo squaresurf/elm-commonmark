@@ -110,15 +110,15 @@ linkAttrParser endTerm =
                 Nothing ->
                     [ Attr.href url ]
         )
-        |. Parser.oneOf
-            [ Parser.succeed identity |. Parser.chompIf (\c -> c == '<')
+        |= Parser.oneOf
+            [ Parser.succeed (\href -> String.replace " " "%20" href)
+                |. Parser.token "<"
+                |= Parser.getChompedString
+                    (Parser.chompUntil ">")
+                |. Parser.token ">"
             , Parser.succeed identity
-            ]
-        |= Parser.getChompedString
-            (Parser.chompWhile (\c -> c /= ' ' && c /= endTerm && c /= '>'))
-        |. Parser.oneOf
-            [ Parser.succeed identity |. Parser.chompIf (\c -> c == '>')
-            , Parser.succeed identity
+                |= Parser.getChompedString
+                    (Parser.chompWhile (\c -> c /= ' ' && c /= endTerm && c /= '>'))
             ]
         |. Parser.spaces
         |= Parser.oneOf
