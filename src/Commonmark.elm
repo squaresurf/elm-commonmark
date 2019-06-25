@@ -86,17 +86,17 @@ inlineParser state =
 
 linkParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
 linkParser state =
-    Parser.succeed
-        (\text attrs ->
-            Loop { state | html = Html.a attrs [ Html.text text ] :: state.html }
-        )
-        |. Parser.symbol "["
-        |= Parser.getChompedString
-            (Parser.chompWhile (\c -> c /= ']'))
-        |. Parser.symbol "]"
-        |. Parser.symbol "("
-        |= linkAttrParser ')'
-        |. Parser.symbol ")"
+    Parser.backtrackable <|
+        Parser.succeed
+            (\text attrs ->
+                Loop { state | html = Html.a attrs [ Html.text text ] :: state.html }
+            )
+            |. Parser.symbol "["
+            |= Parser.getChompedString (Parser.chompUntil "]")
+            |. Parser.symbol "]"
+            |. Parser.symbol "("
+            |= linkAttrParser ')'
+            |. Parser.symbol ")"
 
 
 linkAttrParser : Char -> Parser (List (Attribute msg))
