@@ -13,6 +13,7 @@ import Test.Html.Selector as Selector
 suite : Test
 suite =
     describe "CommonMark"
+        -- TODO test all chompWhiles
         -- TODO write fuzz tests that would generate markdown documents longer than the excerpts from the spec
         -- json.
         [ describe "Tabs"
@@ -30,7 +31,16 @@ suite =
                     testMarkdown "+++" [ Html.p [] [ Html.text "+++" ] ]
             ]
         , describe "Links" <|
-            [ test "Example 481" <|
+            [ test "embedded link" <|
+                \_ ->
+                    testMarkdown "some text [link](/uri \"title\") some more text\n"
+                        [ Html.p []
+                            [ Html.text "some text"
+                            , Html.a [ Attr.href "/uri", Attr.title "title" ] [ Html.text "link" ]
+                            , Html.text "some more text"
+                            ]
+                        ]
+            , test "Example 481" <|
                 \_ ->
                     testMarkdown "[link](/uri \"title\")\n"
                         [ Html.p [] [ Html.a [ Attr.href "/uri", Attr.title "title" ] [ Html.text "link" ] ] ]

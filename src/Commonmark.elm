@@ -5,9 +5,14 @@ import Html.Attributes as Attr
 import Parser exposing ((|.), (|=), Parser, Step(..))
 
 
+type PartialHtml
+    = Text String
+
+
 type alias InlineLoopState msg =
     { endTerm : String
     , html : List (Html msg)
+    , partialHtml : Maybe PartialHtml
     }
 
 
@@ -50,47 +55,32 @@ blockParser html =
 
 
 
----------- Inline Parsers ----------
+-- Inline Parsers --
 
 
 inlineMdParser : String -> Parser (List (Html msg))
 inlineMdParser endTerm =
-    Parser.loop (InlineLoopState "\n\n" []) inlineParser
+    Parser.loop (InlineLoopState "\n\n" [] Nothing) inlineParser
 
 
 inlineParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
 inlineParser state =
     Parser.oneOf
-        [ linkParser state
-        , Parser.succeed (\before str after -> ( before, str, after ))
-            |= Parser.getOffset
-            |= Parser.getChompedString
-                (Parser.chompUntilEndOr state.endTerm)
-            |= Parser.getOffset
-            |> Parser.andThen
-                (\( before, str, after ) ->
-                    if str == "\n" then
-                        Parser.succeed <| Done (List.reverse state.html)
-
-                    else if before < after then
-                        Parser.succeed <|
-                            Loop { state | html = Html.text (String.trim str) :: state.html }
-
-                    else
-                        Parser.problem str
-                )
+        [ Parser.succeed (Done <| finishInlineParser state)
+            |. Parser.token "\n\n"
+        , linkParser
+            |> Parser.map (\html -> Loop <| appendHtmlState html state)
+        , Parser.succeed (\str -> Loop <| appendPartialHtmlState (Text str) state)
+            |= Parser.getChompedString (Parser.chompIf (\_ -> True))
         , Parser.succeed ()
-            |> Parser.map (\_ -> Done (List.reverse state.html))
+            |> Parser.map (\_ -> Done <| finishInlineParser state)
         ]
 
 
-linkParser : InlineLoopState msg -> Parser (Step (InlineLoopState msg) (List (Html msg)))
-linkParser state =
+linkParser : Parser (Html msg)
+linkParser =
     Parser.backtrackable <|
-        Parser.succeed
-            (\text attrs ->
-                Loop { state | html = Html.a attrs [ Html.text text ] :: state.html }
-            )
+        Parser.succeed (\text attrs -> Html.a attrs [ Html.text text ])
             |. Parser.symbol "["
             |= Parser.getChompedString (Parser.chompUntil "]")
             |. Parser.symbol "]"
@@ -128,3 +118,66 @@ linkAttrParser endTerm =
                 |. Parser.token "\""
             , Parser.succeed Nothing
             ]
+
+
+
+-- Loop State Functions --
+
+
+appendHtmlState : Html msg -> InlineLoopState msg -> InlineLoopState msg
+appendHtmlState html state =
+    state
+        |> completeHtmlState
+        |> updateHtml html
+
+
+updateHtml : Html msg -> InlineLoopState msg -> InlineLoopState msg
+updateHtml html state =
+    { state | html = html :: state.html }
+
+
+appendPartialHtmlState : PartialHtml -> InlineLoopState msg -> InlineLoopState msg
+appendPartialHtmlState partial state =
+    case partial of
+        Text str ->
+            case state.partialHtml of
+                Nothing ->
+                    { state | partialHtml = Just partial }
+
+                Just currentPartial ->
+                    case currentPartial of
+                        Text partialStr ->
+                            { state | partialHtml = Just <| Text <| String.append partialStr str }
+
+
+completeHtmlState : InlineLoopState msg -> InlineLoopState msg
+completeHtmlState state =
+    case state.partialHtml of
+        Nothing ->
+            state
+
+        Just partial ->
+            { state | html = List.concat [ completeHtml partial, state.html ], partialHtml = Nothing }
+
+
+completeHtml : PartialHtml -> List (Html msg)
+completeHtml partial =
+    case partial of
+        Text str ->
+            let
+                trimmed =
+                    String.trim str
+            in
+            if String.isEmpty trimmed then
+                []
+
+            else
+                [ Html.text trimmed ]
+
+
+finishInlineParser : InlineLoopState msg -> List (Html msg)
+finishInlineParser state =
+    state
+        |> completeHtmlState
+        |> .html
+        |> List.reverse
