@@ -1,5 +1,8 @@
 const fs = require("fs");
 const puppeteer = require("puppeteer");
+const Entities = require("html-entities").XmlEntities;
+
+const entities = new Entities();
 
 const specBuffer = fs.readFileSync("spec/CommonMark-0.29.0.spec.json");
 const jsonSpec = JSON.parse(specBuffer);
@@ -43,7 +46,8 @@ for (i; i < jsonSpec.length; i++) {
 
         const element = await page.$("#parsed_markdown");
         const html = await page.evaluate(element => element.innerHTML, element);
-        expect(`${html}\n`).toBe(ex.html);
+        const decodedHtml = entities.decode(html);
+        expect(`${decodedHtml}\n`).toBe(ex.html);
       });
     }
   })(i);
